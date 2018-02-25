@@ -5,20 +5,24 @@ import
 (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/go-redis/redis"
-
 )
 
 var client *redis.Client;	
 
+
 func init(){
-	InitializeRedis("localhost:6379")
+
+	InitializeRedis()
 }
 
 // Resets the redis client
-func InitializeRedis(redisAddress string){
-	client = NewClient(redisAddress)
+func InitializeRedis(){
+	
+	client = NewClient(os.Getenv("REDIS_URL"));
+	
 	client.Set("users:nextuserid", "0", 0).Result(); 
 	client.Del("users:usernames");
 }
@@ -26,8 +30,8 @@ func InitializeRedis(redisAddress string){
 func NewClient(address string) *redis.Client {
 	client := redis.NewClient(&redis.Options{
 		Addr:     address,
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Password: "", 
+		DB:       0,  
 	})
 
 	return client
@@ -39,6 +43,7 @@ func ClientUserCreate(u User) error {
 
 	val, err := client.SIsMember("users:usernames", u.Username).Result(); 
 	if err != nil { 
+		fmt.Println("There was an error checking the username list")
 		return err 
 	}
 
@@ -48,6 +53,7 @@ func ClientUserCreate(u User) error {
 
 	_, err = client.SAdd("users:usernames", u.Username).Result(); 
 	if err != nil { 
+		fmt.Println("There was an error adding the username to the set")
 		return err 
 	}
  

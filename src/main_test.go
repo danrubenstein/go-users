@@ -28,7 +28,7 @@ func TestMain(m *testing.M) {
 
 func TestUserCreate(t *testing.T) {
 
-    main.InitializeRedis("localhost:6379")
+    main.InitializeRedis()
 
     testString, err := json.Marshal(testUsers[0])
     
@@ -45,7 +45,7 @@ func TestUserCreate(t *testing.T) {
 
 func TestUserNotCreatedTwice(t *testing.T) { 
 
-    main.InitializeRedis("localhost:6379")
+    main.InitializeRedis()
 
     testString, err := json.Marshal(testUsers[0])
     
@@ -69,7 +69,7 @@ func TestUserNotCreatedTwice(t *testing.T) {
 
 func TestUserCreateMultiple(t *testing.T) { 
 
-    main.InitializeRedis("localhost:6379")
+    main.InitializeRedis()
 
     testString1, err := json.Marshal(testUsers[0])
     
