@@ -112,6 +112,15 @@ func TestUserInfo(t *testing.T) {
 	assertEqual(t, "response body", response1.Body.String(), "{\"username\":\"mary\",\"name\":\"mary\",\"birthdate\":\"\",\"email\":\"\"}\n")
 }
 
+func TestUserInfoNotFound(t *testing.T) { 
+
+    req1, _ := http.NewRequest("GET", "/api/user/234590782/info", nil)
+    response1 := executeRequest(req1)
+
+    assertEqual(t, "response code", response1.Result().StatusCode, 404)
+    assertEqual(t, "response body", response1.Body.String(), "This user id (234590782) couldn't be found!\n"); 
+}
+
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 	rr := httptest.NewRecorder()
 

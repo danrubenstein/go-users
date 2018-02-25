@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	
@@ -26,7 +27,12 @@ func HandleUserInfo(w http.ResponseWriter, r *http.Request) {
 	
 	user, err := ClientUserInfo(userId)
 	if err != nil { 
-		http.Error(w, err.Error(), 500)
+
+		if strings.Contains(err.Error(), "couldn't be found!") { 
+			http.Error(w, err.Error(), 404)
+		} else { 
+			http.Error(w, err.Error(), 500)
+		}
 	} else { 
 
 		responseBytes, err := json.Marshal(user)

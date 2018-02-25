@@ -84,6 +84,11 @@ func ClientUserInfo(userId int) (User, error)  {
 	userUsernameKey := fmt.Sprintf("users:%d:username", userId); 
 	userUsername, err := client.Get(userUsernameKey).Result(); 
 	if err != nil { 
+
+		if err.Error() == "redis: nil" { 
+			return emptyUser, errors.New(fmt.Sprintf("This user id (%d) couldn't be found!", userId)); 
+		}
+		fmt.Println("Couldn't find the user here"); 
 		return emptyUser, err
 	}
 
