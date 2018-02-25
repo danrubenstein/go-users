@@ -89,6 +89,7 @@ func ClientUserInfo(userId int) (User, error)  {
 
 	userNameKey := fmt.Sprintf("users:%d:username", userId); 
 	userName, err := client.Get(userNameKey).Result(); 
+	
 	if err != nil { 
 		return emptyUser, err 
 	}

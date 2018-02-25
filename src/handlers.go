@@ -19,19 +19,21 @@ func HandleUserInfo(w http.ResponseWriter, r *http.Request) {
 	
 	v := mux.Vars(r)
 	userId, err := strconv.Atoi(v["userId"])
+	
 	if err != nil { 
 		http.Error(w, err.Error(), 409)
 	}
+	
 	user, err := ClientUserInfo(userId)
 	if err != nil { 
 		http.Error(w, err.Error(), 500)
 	} else { 
 
-		responseString, err := json.Marshal(user)
+		responseBytes, err := json.Marshal(user)
 		if err != nil { 
 			http.Error(w, err.Error(), 500)
 		}
-		fmt.Fprintln(w, responseString)
+		fmt.Fprintln(w, string(responseBytes))
 	}
 }
 
