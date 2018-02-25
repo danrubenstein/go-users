@@ -1,0 +1,15 @@
+[
+	{
+	    "username" : "mary", 
+	    "name" : "dan", 
+	    "birthdate" : "", 
+	    "email" : ""
+	}, 
+
+	{
+	    "username" : "john", 
+	    "name" : "", 
+	    "birthdate" : "", 
+	    "email" : ""
+	}
+]
