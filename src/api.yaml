@@ -30,5 +30,28 @@ API Design
   - Example:
     - request: curl -X GET localhost:8080/api/user/1/info
     - response: {"result" : { "user" : { "userid" : 1, "username" : "dan", "name" : "Dan", "birthday" : "1970/01/01", "email" : "help@gmail.com"} }}
+- /api/user/{userid}/{attribute}:
+  - Description: get or set a specific tag of information about a user
+  - Methods:
+    - GET:
+      - Headers: None
+      - Returns: 
+        - 200: successful information lookup
+        - 404: userid or attribute not found 
+        - 409: Bad {userid}
+        - 500: server error 
+      - Example:
+        - request: curl -X GET localhost:8080/api/user/1/email
+        - response: "help@gmail.com" 
+    - PUT:
+      - Headers: None 
+      - Returns:
+        - 200: on successful info set  
+        - 404: on userid or attribute not found
+        - 409: Bad {userid} or empty body
+        - 500: on server error 
+      - Example:
+        - request: curl -X PUT localhost:8080/api/user/1/email --data "dan@gmail.com"
+        - response: (blank)
 
  

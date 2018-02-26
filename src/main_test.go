@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	s "strings"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -41,8 +42,7 @@ func TestUserCreate(t *testing.T) {
 	req, _ := http.NewRequest("POST", "/api/user/create", bytes.NewBuffer(testString))
 	response := executeRequest(req)
 
-	assertEqual(t, "response code", response.Result().StatusCode, 200)
-	assertEqual(t, "response body", response.Body.String(), fmt.Sprintf("Successfully created user %s\n", testUsers[0].Username))
+	assertHttpResponse(t, response, 200, fmt.Sprintf("Successfully created user %s", testUsers[0].Username))
 }
 
 func TestUserNotCreatedTwice(t *testing.T) {
@@ -58,14 +58,12 @@ func TestUserNotCreatedTwice(t *testing.T) {
 	req1, _ := http.NewRequest("POST", "/api/user/create", bytes.NewBuffer(testString))
 	response1 := executeRequest(req1)
 
-	assertEqual(t, "response code", response1.Result().StatusCode, 200)
-	assertEqual(t, "response body", response1.Body.String(), fmt.Sprintf("Successfully created user %s\n", testUsers[0].Username))
+	assertHttpResponse(t, response1, 200, fmt.Sprintf("Successfully created user %s", testUsers[0].Username))
 
 	req2, _ := http.NewRequest("POST", "/api/user/create", bytes.NewBuffer(testString))
 	response2 := executeRequest(req2)
 
-	assertEqual(t, "response code", response2.Result().StatusCode, 409)
-	assertEqual(t, "response body", response2.Body.String(), "The username was already taken\n")
+	assertHttpResponse(t, response2, 409, "The username was already taken")
 
 }
 
@@ -82,8 +80,7 @@ func TestUserCreateMultiple(t *testing.T) {
 	req1, _ := http.NewRequest("POST", "/api/user/create", bytes.NewBuffer(testString1))
 	response1 := executeRequest(req1)
 
-	assertEqual(t, "response code", response1.Result().StatusCode, 200)
-	assertEqual(t, "response body", response1.Body.String(), fmt.Sprintf("Successfully created user %s\n", testUsers[0].Username))
+	assertHttpResponse(t, response1, 200, fmt.Sprintf("Successfully created user %s", testUsers[0].Username))
 
 	testString2, err := json.Marshal(testUsers[1])
 
@@ -94,8 +91,7 @@ func TestUserCreateMultiple(t *testing.T) {
 	req2, _ := http.NewRequest("POST", "/api/user/create", bytes.NewBuffer(testString2))
 	response2 := executeRequest(req2)
 
-	assertEqual(t, "response code", response2.Result().StatusCode, 200)
-	assertEqual(t, "response body", response2.Body.String(), fmt.Sprintf("Successfully created user %s\n", testUsers[1].Username))
+	assertHttpResponse(t, response2, 200, fmt.Sprintf("Successfully created user %s", testUsers[1].Username))
 
 }
 
@@ -105,20 +101,90 @@ func TestUserInfo(t *testing.T) {
 
 	TestUserCreate(t)
 
-	req1, _ := http.NewRequest("GET", "/api/user/0/info", nil)
-	response1 := executeRequest(req1)
+	req, _ := http.NewRequest("GET", "/api/user/0/info", nil)
+	response := executeRequest(req)
 
-	assertEqual(t, "response code", response1.Result().StatusCode, 200)
-	assertEqual(t, "response body", response1.Body.String(), "{\"username\":\"mary\",\"name\":\"mary\",\"birthdate\":\"\",\"email\":\"\"}\n")
+	assertHttpResponse(t, response, 200, "{\"username\":\"mary\",\"name\":\"mary\",\"birthdate\":\"\",\"email\":\"\"}")
 }
 
-func TestUserInfoNotFound(t *testing.T) { 
+func TestUserInfoNotFound(t *testing.T) {
 
-    req1, _ := http.NewRequest("GET", "/api/user/234590782/info", nil)
-    response1 := executeRequest(req1)
+	main.InitializeRedis()
 
-    assertEqual(t, "response code", response1.Result().StatusCode, 404)
-    assertEqual(t, "response body", response1.Body.String(), "This user id (234590782) couldn't be found!\n"); 
+	req, _ := http.NewRequest("GET", "/api/user/234590782/info", nil)
+	response := executeRequest(req)
+
+	assertHttpResponse(t, response, 404, "This user id (234590782) couldn't be found!")
+}
+
+func TestUserAttributeUsername(t *testing.T) {
+
+	main.InitializeRedis()
+	TestUserCreate(t)
+
+	req, _ := http.NewRequest("GET", "/api/user/0/username", nil)
+	response := executeRequest(req)
+
+	assertHttpResponse(t, response, 200, "mary")
+}
+
+func TestUserAttributeUnknownUser(t *testing.T) {
+
+	req, _ := http.NewRequest("GET", "/api/user/234590782/username", nil)
+	response := executeRequest(req)
+
+	assertHttpResponse(t, response, 404, "Couldn't find user 234590782")
+}
+
+func TestUserAttributeBadUserId(t *testing.T) {
+
+	req, _ := http.NewRequest("GET", "/api/user/gopher/username", nil)
+	response := executeRequest(req)
+
+	assertHttpResponse(t, response, 409, "Invalid userid gopher, please use integer")
+}
+
+func TestUserAttributeSetUsername(t *testing.T) {
+
+	main.InitializeRedis()
+	TestUserCreate(t)
+
+	req1, _ := http.NewRequest("PUT", "/api/user/0/username", s.NewReader("marie"))
+	response1 := executeRequest(req1)
+
+	assertHttpResponse(t, response1, 200, "ok")
+
+	req2, _ := http.NewRequest("GET", "/api/user/0/username", nil)
+	response2 := executeRequest(req2)
+
+	assertHttpResponse(t, response2, 200, "marie")
+}
+
+func TestUserAttributeSetUnknownUser(t *testing.T) {
+
+	req, _ := http.NewRequest("PUT", "/api/user/234590782/username", s.NewReader("marie"))
+	res := executeRequest(req)
+
+	assertHttpResponse(t, res, 404, "Couldn't find user 234590782")
+}
+
+func TestUserAttributeSetInvalidUserID(t *testing.T) {
+
+	req, _ := http.NewRequest("PUT", "/api/user/gopher/username", s.NewReader("marie"))
+	res := executeRequest(req)
+
+	assertHttpResponse(t, res, 409, "Invalid userid gopher, please use integer")
+}
+
+func TestUserAttributeSetEmptyAttribute(t *testing.T) {
+
+	main.InitializeRedis()
+	TestUserCreate(t)
+
+	req, _ := http.NewRequest("PUT", "/api/user/0/username", s.NewReader(""))
+	res := executeRequest(req)
+
+	assertHttpResponse(t, res, 409, "Must pass in some body to /api/user/{userId}/{attribute}")
 }
 
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
@@ -129,10 +195,18 @@ func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 	return rr
 }
 
+// assertHttpResponse wraps checks around the status code and response body
+func assertHttpResponse(t *testing.T, r *httptest.ResponseRecorder, statusCode int, expectedBody string) {
+
+	assertEqual(t, "response code", r.Result().StatusCode, statusCode)
+	assertEqual(t, "response body", s.TrimSpace(r.Body.String()), expectedBody)
+
+}
+
 func assertEqual(t *testing.T, testType string, actual interface{}, expected interface{}) {
+
 	if actual != expected {
 		t.Errorf("The expected value for %s was %s, but received %s", testType, expected, actual)
-		t.Errorf("The expected type for %s was %T, but received %T", testType, expected, actual)
 	}
 }
 
